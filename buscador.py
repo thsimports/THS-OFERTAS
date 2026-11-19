@@ -285,7 +285,7 @@ def enviar(texto):
 def montar_alerta(nome, loja, preco, parcelas, veredito, motivo, lucro, pct,
                   produto, link, canal, avisos, cupom):
     e = html.escape
-    titulo = "🟢 COMPRA" if veredito == "COMPRA" else "🟡 BOM PRA ESTOQUE"
+    titulo = {"COMPRA": "🟢 COMPRA", "ESTOQUE": "🟡 BOM PRA ESTOQUE"}.get(veredito, "🔵 OFERTA")
     linhas = [f"<b>{titulo}</b>: {e(motivo)}", f"<b>{e(nome)}</b>",
               f"{e(loja or 'Loja não identificada')}: <b>{reais(preco)}</b>"
               + (f" ou {parcelas}x sem juros" if parcelas else "")]
@@ -348,6 +348,10 @@ def analisar(texto, links, produtos, canal):
         nome, veredito, motivo, lucro, pct = extra
         return montar_alerta(nome, loja, preco, parcelas, veredito, motivo, lucro, pct,
                              None, link, canal, avisos, cupom)
+    ELETRO = ("celular","smartphone","iphone","galaxy","motorola","moto g","xiaomi","redmi","poco","notebook","macbook","tablet","ipad","fone","earbuds","airpods","jbl","caixa de som","smartwatch","relogio","apple watch","echo","alexa","kindle","mouse","teclado","carregador","cabo","power bank","ssd","monitor","console","playstation","xbox","nintendo")
+    if any(p in t for p in ELETRO):
+        nome = texto.strip().splitlines()[0][:120]
+        return montar_alerta(nome, loja, preco, parcelas, "OFERTA", "eletrônico em promoção", None, None, None, link, canal, avisos, cupom)
     return None
 
 
