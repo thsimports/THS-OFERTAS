@@ -333,7 +333,7 @@ def analisar(texto, links, produtos, canal):
         return None
     avisos = riscos(texto)
     if loja is None:
-        avisos.append("loja não identificada, confira o vendedor")
+        return None  # só anúncio direto de loja conhecida
     parcelas, cupom = extrair_parcelas(texto), extrair_cupom(texto)
 
     produto = achar_produto(texto, produtos) if produtos else None
@@ -394,7 +394,19 @@ def rodar():
                         int(os.environ["TELEGRAM_API_ID"]),
                         os.environ["TELEGRAM_API_HASH"]) as cliente:
         os.environ["CHAT_ID"] = str(cliente.get_me().id)
-        canais = [d for d in cliente.iter_dialogs() if eh_canal_de_oferta(d)]
+        from types import SimpleNamespace
+        from telethon.tl.functions.channels import JoinChannelRequest
+        canais = []
+        for nome in regras.CANAIS:
+            try:
+                ent = cliente.get_entity(nome)
+                try:
+                    cliente(JoinChannelRequest(ent))
+                except Exception:
+                    pass
+                canais.append(SimpleNamespace(entity=ent, id=ent.id, name=getattr(ent, "title", nome)))
+            except Exception as erro:
+                print(f"canal {nome}: {erro}")
 
         if os.environ.get("MODO_TESTE") == "1":
             enviar("✅ <b>Robô THS Ofertas funcionando</b>\n"

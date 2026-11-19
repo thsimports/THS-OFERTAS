@@ -37,3 +37,6 @@ IGNORAR = ["galaxy a07"]
 # Palavras que acendem o alerta de risco no anúncio.
 PALAVRAS_RISCO = ["usado", "seminovo", "vitrine", "recondicionado", "reembalado",
                   "open box", "internacional", "versao global", "importado", "sem nota"]
+
+# Fontes que o robô lê (ele entra sozinho). Seus grupos são ignorados.
+CANAIS = ["ofertaskabum", "cupons_desconto", "achadosdotb"]
