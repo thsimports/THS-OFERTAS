@@ -1,1 +1,67 @@
+name: Buscador THS Ofertas
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+    inputs:
+      teste:
+        description: "Mandar mensagem de teste no Telegram"
+        type: boolean
+        default: true
+
+concurrency:
+  group: buscador
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  rodar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: estado.json
+          key: estado-${{ github.run_id }}
+          restore-keys: estado-
+
+      - name: Procurar ofertas
+        run: python buscador.py
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+          TELEGRAM_SESSAO: ${{ secrets.TELEGRAM_SESSAO }}
+          GESTAOCLICK_ACCESS_TOKEN: ${{ secrets.GESTAOCLICK_ACCESS_TOKEN }}
+          GESTAOCLICK_SECRET_TOKEN: ${{ secrets.GESTAOCLICK_SECRET_TOKEN }}
+          MODO_TESTE: ${{ (github.event_name == 'workflow_dispatch' && inputs.teste) && '1' || '0' }}
+
+      - uses: actions/cache/save@v4
+        if: always() && hashFiles('estado.json') != ''
+        with:
+          path: estado.json
+          key: estado-${{ github.run_id }}
+
+      - name: Manter o agendamento ativo o ano inteiro
+        run: |
+          ultimo=$(git log -1 --format=%ct)
+          dias=$(( ($(date +%s) - ultimo) / 86400 ))
+          if [ "$dias" -ge 45 ]; then
+            git config user.name "thsofertas-bot"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit --allow-empty -m "manter ativo"
+            git push
+          fi
 
